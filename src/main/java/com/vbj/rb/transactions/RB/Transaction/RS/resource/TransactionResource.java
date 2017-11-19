@@ -1,9 +1,9 @@
 package com.vbj.rb.transactions.RB.Transaction.RS.resource;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -12,16 +12,12 @@ import javax.ws.rs.core.MediaType;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.opencsv.CSVReader;
-import com.opencsv.bean.ColumnPositionMappingStrategy;
-import com.opencsv.bean.CsvToBean;
-import com.vbj.rb.transactions.RB.Transaction.RS.exceptions.DuplicateReferenceIDException;
+import com.vbj.rb.transactions.RB.Transaction.RS.model.HttpResponse;
 import com.vbj.rb.transactions.RB.Transaction.RS.model.Transaction;
 import com.vbj.rb.transactions.RB.Transaction.service.DataConversionService;
 import com.vbj.rb.transactions.RB.Transaction.service.TransValidationService;
@@ -31,7 +27,7 @@ public class TransactionResource {
 
 	@Autowired
 	private TransValidationService transValidationService;
-	
+
 	@Autowired
 	private DataConversionService conversionService;
 
@@ -44,8 +40,10 @@ public class TransactionResource {
 	@POST
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@RequestMapping(value = "/uploadCSV")
-	public String uploadCSV(@RequestParam("files") MultipartFile[] files) {
-		
+	public HttpResponse uploadCSV(@RequestParam("files") MultipartFile[] files) {
+
+		HttpResponse resp = new HttpResponse();
+
 		List<Transaction> trans = new ArrayList<Transaction>();
 
 		for (MultipartFile file : files) {
@@ -54,25 +52,26 @@ public class TransactionResource {
 				trans = conversionService.convertFromCSV(content);
 
 			} catch (IOException e) {
-				return HttpStatus.UNSUPPORTED_MEDIA_TYPE.name();
+				resp.setStatus(HttpStatus.BAD_REQUEST);
+				return resp;
 			}
-
-			try {
-				transValidationService.vaidate(trans);
-			} catch (DuplicateReferenceIDException e) {
-				return HttpStatus.NOT_ACCEPTABLE.name();
-			}
-
 		}
 
-		return HttpStatus.OK.name();
+		Map<String, List<Transaction>> result = transValidationService
+				.vaidate(trans);
+
+		resp.setResults(result);
+		resp.setStatus(HttpStatus.OK);
+
+		return resp;
 	}
-	
+
 	@POST
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@RequestMapping(value = "/uploadXML")
-	public String uploadXML(@RequestParam("files") MultipartFile[] files) {
-		
+	public HttpResponse uploadXML(@RequestParam("files") MultipartFile[] files) {
+
+		HttpResponse resp = new HttpResponse();
 		List<Transaction> trans = new ArrayList<Transaction>();
 
 		for (MultipartFile file : files) {
@@ -81,17 +80,16 @@ public class TransactionResource {
 				trans = conversionService.convertFromXML(content);
 
 			} catch (IOException e) {
-				return HttpStatus.UNSUPPORTED_MEDIA_TYPE.name();
-			}
-
-			try {
-				transValidationService.vaidate(trans);
-			} catch (DuplicateReferenceIDException e) {
-				return HttpStatus.NOT_ACCEPTABLE.name();
+				resp.setStatus(HttpStatus.BAD_REQUEST);
+				return resp;
 			}
 
 		}
 
-		return HttpStatus.OK.name();
+		Map<String, List<Transaction>> result = transValidationService.vaidate(trans);
+		resp.setResults(result);
+		resp.setStatus(HttpStatus.OK);
+
+		return resp;
 	}
 }

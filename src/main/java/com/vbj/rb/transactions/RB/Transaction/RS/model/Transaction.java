@@ -20,7 +20,7 @@ public class Transaction {
 	@CsvBindByName(column = "Mutation", required = true)
     private String mutation;
 	
-	@CsvBindByName(column = "End Balance", required = true)
+	@CsvBindByName(column = "EndBalance", required = true)
     private String endingBalance;
 
 	public String getReference() {
@@ -71,5 +71,10 @@ public class Transaction {
 		this.endingBalance = endingBalance;
 	}
 	
+	@Override
+	public String toString() {
+		return reference + " " + accountNumber + " " + description + " "
+				+ startBalance + " " + mutation + " " + endingBalance;
+	}
 
 }

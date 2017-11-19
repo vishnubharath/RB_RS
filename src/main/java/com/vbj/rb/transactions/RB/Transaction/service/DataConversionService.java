@@ -9,5 +9,5 @@ public interface DataConversionService {
 
 	List<Transaction> convertFromXML(String str) throws IOException;
 
-	List<Transaction> convertFromCSV(String str);
+	List<Transaction> convertFromCSV(String str) throws IOException;
 }

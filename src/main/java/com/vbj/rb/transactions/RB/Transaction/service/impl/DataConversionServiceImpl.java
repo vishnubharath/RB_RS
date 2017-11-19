@@ -2,6 +2,7 @@ package com.vbj.rb.transactions.RB.Transaction.service.impl;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -21,31 +22,43 @@ public class DataConversionServiceImpl implements DataConversionService {
 
 	@Resource
 	Converter xmlConverter;
-	
+
 	@Override
-	public List<Transaction> convertFromCSV(String str) {
+	public List<Transaction> convertFromCSV(String str) throws IOException {
+
+		List<Transaction> trans = new ArrayList<Transaction>();
 		
-		CSVReader csvReader = new CSVReader(new StringReader(str),
-				',', '\'', 1);
+		if(str == null || str.isEmpty()  ) return trans;
+		CSVReader csvReader = new CSVReader(new StringReader(str), ',', '\'', 1);
 
-		ColumnPositionMappingStrategy<Transaction> mappingStrategy = new ColumnPositionMappingStrategy<Transaction>();
+		String[] nextLine;
 
-		mappingStrategy.setType(Transaction.class);
+		try {
+			while ((nextLine = csvReader.readNext()) != null) {
 
-		String[] columns = new String[] { "Reference", "AccountNumber",
-				"Description", "Start Balance", "Mutation",
-				"End Balance" };
+				Transaction tran = new Transaction();
+				
+				tran.setReference(nextLine[0].trim());
+				tran.setAccountNumber(nextLine[1].trim());
+				tran.setDescription(nextLine[2].trim());
+				tran.setStartBalance(nextLine[3].trim());
+				tran.setMutation(nextLine[4].trim());
+				tran.setEndingBalance(nextLine[5].trim());
+				
+				trans.add(tran);
 
-		mappingStrategy.setColumnMapping(columns);
-
-		CsvToBean<Transaction> csvToBean = new CsvToBean<Transaction>();
+			}
+		} catch (IOException e) {
+			throw e;
+		}
 		
-		return csvToBean.parse(mappingStrategy, csvReader);
+		return trans;
+
 	}
 
 	@Override
 	public List<Transaction> convertFromXML(String str) throws IOException {
-		Transactions trans = (Transactions) xmlConverter.doUnMarshaling(str);		
+		Transactions trans = (Transactions) xmlConverter.doUnMarshaling(str);
 		return trans.getTrans();
 	}
 
